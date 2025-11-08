@@ -10,15 +10,22 @@ SDL_Renderer* renderer = NULL;
 
 int lastFrameTime = 0;
 
+const int BALLNUM = 10;
+
+typedef struct vector2 {
+    float x, y;
+} vector2;
+
+vector2 add(vector2 v1, vector2 v2) {
+    return (vector2) {v1.x + v2.x, v1.y + v2.y};
+}
+
 typedef struct ball {
-    float x;
-    float y;
+    vector2 pos;
+    vector2 velocity;
     float radius;
 
 } ball;
-
-ball ball1;
-
 
 int initialiseWindow(void) {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) { //initialise SDL
@@ -47,10 +54,11 @@ int initialiseWindow(void) {
 }
 
 
-void setup(void) {
-    ball1.x = 20.0f;
-    ball1.y = 20.0f;
-    ball1.radius = 15.0f;
+void setup(int n, ball balls[n]) {
+    for (int i = 0; i < n; i++) {
+        ball balli = (ball) {(vector2) {(i+1)*20.0f, (i+1)*20.0f}, (vector2) {70.0f, 70.0f}, 15.0f};
+        balls[i] = balli;
+    }
 }
 
 //processes user inputs
@@ -71,7 +79,7 @@ void process_input(void) {
 }
 
 //updates values to match user input
-void update(void) {
+void update(int n, ball balls[n]) {
     //sleep the execution until we reach the target frame time in ms
     int timeToWait =  FRAME_TARGET_TIME - (SDL_GetTicks() - lastFrameTime);
 
@@ -82,20 +90,24 @@ void update(void) {
     float deltaTime = (SDL_GetTicks() - lastFrameTime) / 1000.0f; //difference in s of time between frames
     lastFrameTime = SDL_GetTicks(); //updates last time.
 
-    ball1.x += 70 * deltaTime;
-    ball1.y += 70 * deltaTime;
+    for (int i = 0; i < n; i++) {
+        balls[i].pos.x += balls[i].velocity.x * deltaTime;
+        balls[i].pos.y += balls[i].velocity.x * deltaTime;
+    }
 }
 
 //renders changes onto screen
-void render(void) {
+void render(int n, ball balls[n]) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); //colours in backbuffer
     SDL_RenderClear(renderer);
 
-    //Draw a rectangle
-    SDL_Rect ballRect = {(int)ball1.x, (int)ball1.y, (int)ball1.radius, (int)ball1.radius};
+    for (int i = 0; i < n; i++) {
+        //Draw a rectangle
+        SDL_Rect ballRect = {(int)balls[i].pos.x, (int)balls[i].pos.x, (int)balls[i].radius, (int)balls[i].radius};
 
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderFillRect(renderer, &ballRect);
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderFillRect(renderer, &ballRect);
+    }
 
     SDL_RenderPresent(renderer); //renders the backbuffer
 }
@@ -109,12 +121,13 @@ void destroy_window(void) { //destroys in reverse order as initialised
 int main(int n, char* args[n]) {
     game_is_running = initialiseWindow();
 
-    setup();
+    ball balls[BALLNUM];
+    setup(BALLNUM, balls);
 
     while (game_is_running) {
         process_input();
-        update();
-        render();
+        update(BALLNUM, balls);
+        render(BALLNUM, balls);
     }
 
     destroy_window();
